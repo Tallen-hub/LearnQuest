@@ -3,9 +3,9 @@ import { useParams } from 'react-router-dom';
 import TutorSideBar from '../../components/TutorHomePage/TutorSideBar';
 
 const TutorHomePage = () => {
-  const { id } = useParams(); // Get the userId from the URL params
+  const { id } = useParams(); 
   
-  return <TutorSideBar userId={id} />; // Pass userId as a prop to TutorSideBar
+  return <TutorSideBar userId={id} />; 
 };
 
 export default TutorHomePage;

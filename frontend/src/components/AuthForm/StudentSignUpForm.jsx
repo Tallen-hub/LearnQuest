@@ -1,5 +1,3 @@
-// role = student
-
 import { createUser } from '../../api'; 
 import React, { useState } from 'react';
 import { Box, Stack, Input, Button, useToast } from '@chakra-ui/react';
@@ -29,7 +27,7 @@ const StudentSignUpForm = () => {
       });
       return;
     }
-
+  
     // Check if email is valid
     if (!user.email.includes('@')) {
       toast({
@@ -41,7 +39,7 @@ const StudentSignUpForm = () => {
       });
       return;
     }
-
+  
     // Check if passwords match
     if (user.password !== user.confirmPassword) {
       toast({
@@ -53,16 +51,19 @@ const StudentSignUpForm = () => {
       });
       return;
     }
-
+  
     try {
+      // Call API to create user and capture the response
       const response = await createUser({
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         password: user.password,
         role: 'student',
       });
-
+  
       if (response.status === 200) {
+        const userData = response.data; 
+  
         // Clear form and show success
         setUser({
           firstName: '',
@@ -78,7 +79,10 @@ const StudentSignUpForm = () => {
           duration: 3000,
           isClosable: true,
         });
-        navigate('/Quiz'); // Navigate to Quiz after successful sign-up
+  
+        // Use the insertedId from the response to navigate
+        //vhange navigate('/quiz when done)
+        navigate(`/student-home/${userData.insertedId}`);
       } else {
         throw new Error('Sign-up failed');
       }
@@ -92,10 +96,11 @@ const StudentSignUpForm = () => {
       });
     }
   };
+  
 
   return (
     <Stack spacing={4}>
-      <Box as={'form'} mt={1}>
+      <Box mt={1}> 
         <Stack spacing={4}>
           <Input
             placeholder="First name"
@@ -161,4 +166,3 @@ const StudentSignUpForm = () => {
 };
 
 export default StudentSignUpForm;
-

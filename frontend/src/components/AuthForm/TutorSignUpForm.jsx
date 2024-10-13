@@ -12,7 +12,7 @@ import {
   FormControl,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import { createUser } from '../../api'; // Import your API function
+import { createUser } from '../../api'; 
 
 const subjectsOptions = [
   "Math",
@@ -71,7 +71,7 @@ const TutorSignUpForm = () => {
       });
 
       if (response.status === 200) {
-        const userData = response.data; // Get the user data from the response
+        const userData = response.data; 
         
         // Clear form and show success
         setUser({
