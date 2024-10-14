@@ -1,3 +1,4 @@
+// TutorSideBar.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Menu,
@@ -17,7 +18,7 @@ import {
   DrawerCloseButton,
   DrawerHeader,
   DrawerBody,
-  useDisclosure,  // Imported for use in mobile drawer
+  useDisclosure,
   useBreakpointValue,
   VStack,
   Text,
@@ -25,49 +26,69 @@ import {
   Spinner,
 } from '@chakra-ui/react';
 import { BellIcon, ChevronDownIcon, HamburgerIcon } from '@chakra-ui/icons';
+import { useNavigate, useParams } from 'react-router-dom';
+import { getUser, logoutUser } from '../../api';
 
+// Import other components
 import TutorCalendarPage from './TutorCalendarPage';
 import TutorMessage from './TutorMessage';
 import TutorSchedule from './TutorSchedule';
 import TutorAvailability from './TutorAvailability';
-import { useParams } from 'react-router-dom';
-import { getUser } from '../../api';
 
 const TutorSideBar = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();  // Correctly set up useDisclosure
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = React.useRef();
-  const isMobile = useBreakpointValue({ base: true, md: false });  // Determines if mobile view
+  const isMobile = useBreakpointValue({ base: true, md: false });
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // State to track which view to display
   const [activeView, setActiveView] = useState('home');
-  const { id } = useParams(); // Get user ID from the route
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  // Call useColorModeValue unconditionally at the top level
+  const bgColor = useColorModeValue('gray.100', 'gray.900');
+  const sidebarBgColor = useColorModeValue('white', 'gray.800');
+  const sidebarBorderColor = useColorModeValue('gray.200', 'gray.700');
 
   useEffect(() => {
     async function fetchUserData() {
       try {
         const userData = await getUser(id);
         setUser(userData);
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchUserData();
   }, [id]);
 
+  // Function to handle logout
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      localStorage.removeItem('userToken');
+      navigate('/auth');
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Consider adding error handling (e.g., a toast) for the user here
+    }
+  };
+
   // Function to render different views based on state
   const renderView = () => {
     switch (activeView) {
       case 'calendar':
-        return <TutorCalendarPage />; // Render the CalendarPage component
+        return <TutorCalendarPage />;
       case 'schedule':
         return <TutorSchedule />;
       case 'message':
         return <TutorMessage />;
       case 'availability':
-        return <TutorAvailability userId={id} />; // Pass userId as a prop
+        return <TutorAvailability userId={id} />;
       default:
         return <Text>Welcome to the homepage, {user ? user.name : ''}!</Text>;
     }
@@ -75,7 +96,7 @@ const TutorSideBar = () => {
 
   return (
     <Box
-      bg={useColorModeValue('gray.100', 'gray.900')}
+      bg={bgColor}
       minHeight="100vh"
       width="100vw"
     >
@@ -84,18 +105,16 @@ const TutorSideBar = () => {
         <Heading size="md">Logo</Heading>
 
         <HStack spacing={4}>
-          {/* Mobile Menu Icon */}
           {isMobile && (
             <IconButton
               ref={btnRef}
-              icon={<HamburgerIcon />}  // Hamburger icon to open the drawer
+              icon={<HamburgerIcon />}
               variant="ghost"
               aria-label="Open Menu"
-              onClick={onOpen}  // Opens the mobile drawer when clicked
+              onClick={onOpen}
             />
           )}
 
-          {/* Notification Icon */}
           <IconButton
             size={'lg'}
             variant={'ghost'}
@@ -103,7 +122,6 @@ const TutorSideBar = () => {
             icon={<BellIcon />}
           />
 
-          {/* Profile Dropdown */}
           <Menu>
             <MenuButton as={Button} rounded={'full'} variant={'link'} cursor={'pointer'} minW={0}>
               <HStack>
@@ -115,23 +133,21 @@ const TutorSideBar = () => {
             </MenuButton>
             <MenuList>
               <MenuItem>Profile</MenuItem>
-              <MenuItem>Logout</MenuItem>
+              <MenuItem onClick={handleLogout}>Logout</MenuItem>
             </MenuList>
           </Menu>
         </HStack>
       </Flex>
 
-      {/* Main Layout */}
       <Flex>
-        {/* Sidebar (for non-mobile view) */}
         {!isMobile && (
           <Box
             w="250px"
-            bg={useColorModeValue('white', 'gray.800')}
+            bg={sidebarBgColor}
             p={4}
             borderRight="1px solid"
-            borderColor={useColorModeValue('gray.200', 'gray.700')}
-            minHeight="calc(100vh - 64px)" // Subtracting height of header
+            borderColor={sidebarBorderColor}
+            minHeight="calc(100vh - 64px)"
           >
             <VStack align="start" spacing={4}>
               <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('home')}>Home</Button>
@@ -143,17 +159,16 @@ const TutorSideBar = () => {
           </Box>
         )}
 
-        {/* Drawer for Mobile */}
         <Drawer
           isOpen={isOpen}
           placement="left"
-          onClose={onClose}  // Closes the mobile drawer
+          onClose={onClose}
           finalFocusRef={btnRef}
         >
           <DrawerOverlay>
             <DrawerContent>
-              <DrawerCloseButton color={'black'} />
-              <DrawerHeader>Menu</DrawerHeader>
+              <DrawerCloseButton    color={'black'} />
+              <DrawerHeader>Menu</DrawerHeader>   
 
               <DrawerBody>
                 <VStack align="start" spacing={4}>
@@ -168,7 +183,6 @@ const TutorSideBar = () => {
           </DrawerOverlay>
         </Drawer>
 
-        {/* Right Content Area */}
         <Box flex={1} p={8}>
           {loading ? <Spinner size="xl" /> : renderView()}
         </Box>
@@ -178,6 +192,3 @@ const TutorSideBar = () => {
 };
 
 export default TutorSideBar;
-
-
-

@@ -12,7 +12,7 @@ import {
   FormControl,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import { createUser } from '../../api'; 
+import { createUser } from '../../api';
 
 const subjectsOptions = [
   "Math",
@@ -42,7 +42,7 @@ const TutorSignUpForm = () => {
     bio: '',
     experience: '',
   });
-  
+
   const toast = useToast();
   const navigate = useNavigate();
   const [isSubjectsOpen, setIsSubjectsOpen] = useState(false);
@@ -51,9 +51,42 @@ const TutorSignUpForm = () => {
 
   const handleSignUp = async () => {
     setLoading(true);
-    
-    // Validation checks...
+
+    // Check if all fields are filled
+    if (!user.email || !user.password || !user.firstName || !user.lastName || !user.confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Please fill all the required fields',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Check if email is valid
+    if (!user.email.includes('@')) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid email address',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Check if passwords match
     if (user.password !== user.confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
       setLoading(false);
       return;
     }
@@ -71,8 +104,8 @@ const TutorSignUpForm = () => {
       });
 
       if (response.status === 200) {
-        const userData = response.data; 
-        
+        const userData = response.data;
+
         // Clear form and show success
         setUser({
           firstName: '',
@@ -85,7 +118,7 @@ const TutorSignUpForm = () => {
           bio: '',
           experience: '',
         });
-        
+
         toast({
           title: 'Success',
           description: 'Tutor signed up successfully!',
@@ -93,7 +126,7 @@ const TutorSignUpForm = () => {
           duration: 3000,
           isClosable: true,
         });
-        
+
         // Navigate using the returned user ID from MongoDB
         navigate(`/tutor-home/${userData.insertedId}`);
       } else {
@@ -127,7 +160,7 @@ const TutorSignUpForm = () => {
           onChange={(e) => setUser({ ...user, lastName: e.target.value })}
         />
         <Input
-          placeholder="Email"
+          placeholder="Email"   
           type="email"
           value={user.email}
           onChange={(e) => setUser({ ...user, email: e.target.value })}
@@ -146,15 +179,15 @@ const TutorSignUpForm = () => {
         />
         {/* Area of Expertise Dropdown */}
         <FormControl>
-          <Button 
-            onClick={() => setIsSubjectsOpen(!isSubjectsOpen)} 
+          <Button
+            onClick={() => setIsSubjectsOpen(!isSubjectsOpen)}
             w={'full'}
           >
             {user.subjects.length > 0 ? `Area of Expertise: ${user.subjects.join(', ')}` : 'Area of Expertise'}
           </Button>
           <Collapse in={isSubjectsOpen}>
-            <CheckboxGroup 
-              colorScheme="pink" 
+            <CheckboxGroup
+              colorScheme="pink"
               value={user.subjects}
               onChange={(value) => {
                 setUser({ ...user, subjects: value, specificSubjects: [] });
@@ -162,8 +195,8 @@ const TutorSignUpForm = () => {
               }}
             >
               <Stack spacing={2} mt={2}>
-                {subjectsOptions.map((subject) => (
-                  <Checkbox key={subject} value={subject}>
+                {subjectsOptions.map((subject, index) => (
+                  <Checkbox key={subject} value={subject} id={`subject-checkbox-${index}`}>
                     {subject}
                   </Checkbox>
                 ))}
@@ -174,21 +207,21 @@ const TutorSignUpForm = () => {
         {/* Specific Subjects Dropdown */}
         {user.subjects.length > 0 && (
           <FormControl>
-            <Button 
-              onClick={() => setIsSpecificSubjectsOpen(!isSpecificSubjectsOpen)} 
+            <Button
+              onClick={() => setIsSpecificSubjectsOpen(!isSpecificSubjectsOpen)}
               w={'full'}
               mt={2}
             >
               {user.specificSubjects.length > 0 ? `Specific Subjects: ${user.specificSubjects.join(', ')}` : 'Select Specific Subjects'}
             </Button>
             <Collapse in={isSpecificSubjectsOpen}>
-              <CheckboxGroup 
-                colorScheme="pink" 
+              <CheckboxGroup
+                colorScheme="pink"
                 value={user.specificSubjects}
                 onChange={(value) => setUser({ ...user, specificSubjects: value })}
               >
                 <Stack spacing={2} mt={2}>
-                  {user.subjects.flatMap(subject => 
+                  {user.subjects.flatMap(subject =>
                     specificSubjects[subject] ? specificSubjects[subject].map(specific => (
                       <Checkbox key={specific} value={specific}>
                         {specific}
@@ -217,7 +250,7 @@ const TutorSignUpForm = () => {
         w={'full'}
         bgGradient="linear(to-r, red.400,pink.400)"
         color={'white'}
-        onClick={handleSignUp}
+        onClick={handleSignUp}   
         isLoading={loading}
       >
         Sign Up
