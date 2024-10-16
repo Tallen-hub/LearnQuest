@@ -1,5 +1,6 @@
 // StudentSideBar.jsx
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom'; 
 import {
   Menu,
   MenuButton,
@@ -25,10 +26,9 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import { BellIcon, ChevronDownIcon, HamburgerIcon } from '@chakra-ui/icons';
-import { useNavigate } from 'react-router-dom';
-import { logoutUser } from '../../api';
+import { useNavigate, useParams } from 'react-router-dom'; 
+import { logoutUser } from '../../api'; 
 
-// Import other components
 import StudentCalendarPage from './StudentCalendarPage';
 import StudentSchedule from './StudentSchedule';
 
@@ -47,6 +47,9 @@ const StudentSideBar = () => {
   const bgColor = useColorModeValue('gray.100', 'gray.900');
   const sidebarBgColor = useColorModeValue('white', 'gray.800');
   const sidebarBorderColor = useColorModeValue('gray.200', 'gray.700');
+
+  // Get the student's ID (assuming it's in the URL)
+  const { id } = useParams(); 
 
   // Function to handle logout
   const handleLogout = async () => {
@@ -112,7 +115,7 @@ const StudentSideBar = () => {
               </HStack>
             </MenuButton>
             <MenuList>
-              <MenuItem>Profile</MenuItem>
+              <MenuItem as={Link} to={`/student-profile/${id}`}>Profile</MenuItem> 
               <MenuItem onClick={handleLogout}>Logout</MenuItem>
             </MenuList>
           </Menu>
@@ -129,7 +132,7 @@ const StudentSideBar = () => {
             p={4}
             borderRight="1px solid"
             borderColor={sidebarBorderColor}
-            minHeight="calc(100vh - 64px)"
+            minHeight="calc(100vh - 64px)" 
           >
             <VStack align="start" spacing={4}>
               <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('home')}>Home</Button>
@@ -150,7 +153,7 @@ const StudentSideBar = () => {
           <DrawerOverlay>
             <DrawerContent>
               <DrawerCloseButton color={'black'} />
-              <DrawerHeader>Menu</DrawerHeader>   
+              <DrawerHeader>Menu</DrawerHeader>
 
               <DrawerBody>
                 <VStack align="start" spacing={4}>

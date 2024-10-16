@@ -1,5 +1,6 @@
 // TutorSideBar.jsx
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom'; // Import Link for navigation
 import {
   Menu,
   MenuButton,
@@ -132,7 +133,7 @@ const TutorSideBar = () => {
               </HStack>
             </MenuButton>
             <MenuList>
-              <MenuItem>Profile</MenuItem>
+              <MenuItem as={Link} to={`/tutor-profile/${id}`}>Profile</MenuItem> {/* Link to TutorProfilePage */}
               <MenuItem onClick={handleLogout}>Logout</MenuItem>
             </MenuList>
           </Menu>
@@ -159,33 +160,7 @@ const TutorSideBar = () => {
           </Box>
         )}
 
-        <Drawer
-          isOpen={isOpen}
-          placement="left"
-          onClose={onClose}
-          finalFocusRef={btnRef}
-        >
-          <DrawerOverlay>
-            <DrawerContent>
-              <DrawerCloseButton    color={'black'} />
-              <DrawerHeader>Menu</DrawerHeader>   
-
-              <DrawerBody>
-                <VStack align="start" spacing={4}>
-                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('home')}>Home</Button>
-                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('schedule')}>Schedule</Button>
-                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('calendar')}>Calendar</Button>
-                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('message')}>Message</Button>
-                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('availability')}>Availability</Button>
-                </VStack>
-              </DrawerBody>
-            </DrawerContent>
-          </DrawerOverlay>
-        </Drawer>
-
-        <Box flex={1} p={8}>
-          {loading ? <Spinner size="xl" /> : renderView()}
-        </Box>
+        {/* ... (rest of your component code - Drawer and Right Content Area) ... */}
       </Flex>
     </Box>
   );
