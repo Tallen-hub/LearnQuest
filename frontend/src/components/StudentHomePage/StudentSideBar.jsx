@@ -1,5 +1,4 @@
-// StudentSideBar.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Menu,
   MenuButton,
@@ -10,7 +9,7 @@ import {
   Box,
   Flex,
   HStack,
-  Heading,
+  Image, // Import the Image component
   Button,
   Drawer,
   DrawerOverlay,
@@ -18,36 +17,46 @@ import {
   DrawerCloseButton,
   DrawerHeader,
   DrawerBody,
-  useDisclosure,
+  useDisclosure,  
   useBreakpointValue,
   VStack,
   Text,
   useColorModeValue,
+  Spinner,
 } from '@chakra-ui/react';
 import { BellIcon, ChevronDownIcon, HamburgerIcon } from '@chakra-ui/icons';
-import { useNavigate } from 'react-router-dom';
-import { logoutUser } from '../../api';
-
-// Import other components
+import untitledDesign from '../../assets/Untitled design.png'; // Import the Untitled design image
 import StudentCalendarPage from './StudentCalendarPage';
+import StudentMessage from './StudentMessage';
 import StudentSchedule from './StudentSchedule';
-import Orders from './Orders.jsx';
-
-const Message = () => <Text>Message View</Text>;
+import Orders from './Orders';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getUser, logoutUser } from '../../api';
 
 const StudentSideBar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = React.useRef();
   const isMobile = useBreakpointValue({ base: true, md: false });
-  const navigate = useNavigate();
 
-  // State to track which view to display
   const [activeView, setActiveView] = useState('home');
 
-  // Call useColorModeValue unconditionally at the top level
-  const bgColor = useColorModeValue('gray.100', 'gray.900');
-  const sidebarBgColor = useColorModeValue('white', 'gray.800');
-  const sidebarBorderColor = useColorModeValue('gray.200', 'gray.700');
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    async function fetchStudentData() {
+      try {
+        const userData = await getUser(id); 
+        setUser(userData); 
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching student data:', error);
+      }
+    }
+    fetchStudentData();
+  }, [id]);
 
   // Function to handle logout
   const handleLogout = async () => {
@@ -55,14 +64,11 @@ const StudentSideBar = () => {
       localStorage.removeItem('userToken');
       navigate('/auth');
       await logoutUser();
-     
     } catch (error) {
       console.error("Logout error:", error);
-      // Optionally, display an error message to the user using a toast or alert
     }
   };
 
-  // Function to render different views based on state
   const renderView = () => {
     switch (activeView) {
       case 'calendar':
@@ -70,35 +76,47 @@ const StudentSideBar = () => {
       case 'schedule':
         return <StudentSchedule />;
       case 'message':
-        return <Message />;
-        case 'Orders':
-          return <Orders />;
+        return <StudentMessage />; 
+      case 'orders':
+        return <Orders />;
       default:
-        return <Text>Welcome to the homepage!</Text>;
+        return <Text>Welcome to the homepage, {user ? user.name : ''}!</Text>; 
     }
   };
 
   return (
     <Box
-      bg={bgColor}
+      bg={useColorModeValue('gray.100', 'gray.900')}
       minHeight="100vh"
       width="100vw"
     >
       {/* Header */}
       <Flex h={16} alignItems={'center'} justifyContent={'space-between'} px={4} backgroundColor={'white'}>
-        <Heading size="md">Logo</Heading>
+        {/* Replace the heading with the Untitled design logo */}
+        <Image
+          src={untitledDesign}
+          alt="Untitled Design Logo"
+          sx={{
+            cursor: "pointer",
+            width: "204px",   // Set width to 204px
+            height: "46px",   // Set height to 46px
+            display: { base: "none", md: "block" },  // Hide on small screens
+          }}
+        />
 
         <HStack spacing={4}>
+          {/* Mobile Menu Icon */}
           {isMobile && (
             <IconButton
               ref={btnRef}
-              icon={<HamburgerIcon />}
+              icon={<HamburgerIcon />} 
               variant="ghost"
               aria-label="Open Menu"
-              onClick={onOpen}
+              onClick={onOpen}  
             />
           )}
 
+          {/* Notification Icon */}
           <IconButton
             size={'lg'}
             variant={'ghost'}
@@ -106,10 +124,15 @@ const StudentSideBar = () => {
             icon={<BellIcon />}
           />
 
+          {/* Profile Dropdown */}
           <Menu>
             <MenuButton as={Button} rounded={'full'} variant={'link'} cursor={'pointer'} minW={0}>
               <HStack>
-                <Avatar size={'sm'} src={'https://bit.ly/dan-abramov'} />
+                <Avatar
+                  size={'sm'}
+                  src={user && user.profilePicUrl ? user.profilePicUrl : undefined}
+                  name={user ? user.name : ''} 
+                />
                 <Box display={{ base: 'none', md: 'flex' }}>
                   <ChevronDownIcon />
                 </Box>
@@ -125,22 +148,22 @@ const StudentSideBar = () => {
 
       {/* Main Layout */}
       <Flex>
-        {/* Sidebar */}
+        {/* Sidebar (for non-mobile view) */}
         {!isMobile && (
           <Box
             w="250px"
-            bg={sidebarBgColor}
+            bg={useColorModeValue('white', 'gray.800')}
             p={4}
             borderRight="1px solid"
-            borderColor={sidebarBorderColor}
-            minHeight="calc(100vh - 64px)"
+            borderColor={useColorModeValue('gray.200', 'gray.700')}
+            minHeight="calc(100vh - 64px)" 
           >
             <VStack align="start" spacing={4}>
               <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('home')}>Home</Button>
-              <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('schedule')}>Schedule</Button>
-              <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('calendar')}>Calendar</Button>
-              <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('message')}>Message</Button>
-              <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('Orders')}>Orders</Button>
+              <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('schedule')}>Book a Session</Button>
+              <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('calendar')}>My Calendar</Button>
+              <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('message')}>Inbox</Button>
+              <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('orders')}>Bookings</Button>
             </VStack>
           </Box>
         )}
@@ -149,7 +172,7 @@ const StudentSideBar = () => {
         <Drawer
           isOpen={isOpen}
           placement="left"
-          onClose={onClose}
+          onClose={onClose}  
           finalFocusRef={btnRef}
         >
           <DrawerOverlay>
@@ -160,9 +183,10 @@ const StudentSideBar = () => {
               <DrawerBody>
                 <VStack align="start" spacing={4}>
                   <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('home')}>Home</Button>
-                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('schedule')}>Schedule</Button>
-                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('calendar')}>Calendar</Button>
-                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('message')}>Message</Button>
+                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('schedule')}>Book a Sessions</Button>
+                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('calendar')}>Session Calendar</Button>
+                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('message')}>Inbox</Button>
+                  <Button w="100%" justifyContent="flex-start" onClick={() => setActiveView('orders')}>Bookings</Button>
                 </VStack>
               </DrawerBody>
             </DrawerContent>
@@ -171,7 +195,7 @@ const StudentSideBar = () => {
 
         {/* Right Content Area */}
         <Box flex={1} p={8}>
-          {renderView()}
+          {loading ? <Spinner size="xl" /> : renderView()} 
         </Box>
       </Flex>
     </Box>
@@ -179,3 +203,4 @@ const StudentSideBar = () => {
 };
 
 export default StudentSideBar;
+

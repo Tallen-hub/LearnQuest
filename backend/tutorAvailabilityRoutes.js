@@ -15,12 +15,13 @@ let tutorAvailabilityRoutes = express.Router();
 tutorAvailabilityRoutes.post('/test', isTutor, async (req, res) => {
     return res.status(200).json({ message: "ok working" })
 })
-// POST: Create or update tutor availability
+
 tutorAvailabilityRoutes.post("/availability", isTutor, async (request, response) => {
     let db = database.getDb();
     let selectedSubjects = request.body.availability.selectedSubjects;
 
     try {
+        // Find the tutor in the 'users' collection
         let tutor = await db.collection("users").findOne({
             _id: new ObjectId(request.body.userId),
         });
@@ -29,78 +30,88 @@ tutorAvailabilityRoutes.post("/availability", isTutor, async (request, response)
             return response.status(404).json({ message: "Tutor not found" });
         }
 
+        // Find existing availability for the tutor
         let existingAvailability = await db.collection("tutorAvailability").findOne({
             tutorId: request.body.userId
         });
 
+        // Split the availability into hourly slots using splitIntoHourlySlots
         const availabilityWithIds = request.body.availability.availability.map(day => ({
             ...day,
-            slots: day.slots.map(slot => {
-                const existingDay = existingAvailability?.availability.find(d => d.day === day.day);
-                const existingSlot = existingDay?.slots.find(s => s.start === slot.start && s.end === slot.end);
-
-                return {
-                    ...slot,
-                    id: existingSlot ? existingSlot.id : uuid(),
-                    isBooked: existingSlot ? existingSlot.isBooked : false
-                };
-            }),
+            slots: day.slots.flatMap(slot => splitIntoHourlySlots(slot.start, slot.end).map(hourSlot => ({
+                start: hourSlot.start,
+                end: hourSlot.end,
+                id: uuid(),  // Generate unique id for each hourly slot
+                isBooked: false  // By default, the slot is not booked
+            }))),
         }));
 
         if (existingAvailability) {
-            const hasAvailabilityChanged = JSON.stringify(existingAvailability.availability) !== JSON.stringify(availabilityWithIds);
-            const hasSubjectsChanged = JSON.stringify(existingAvailability.selectedSubjects) !== JSON.stringify(selectedSubjects);
-
-            if (hasAvailabilityChanged || hasSubjectsChanged) {
-                let result = await db.collection("tutorAvailability").updateOne(
-                    { tutorId: request.body.userId },
-                    { $set: { availability: availabilityWithIds, selectedSubjects: selectedSubjects } }
-                );
-
-                if (result.modifiedCount > 0) {
-                    response.status(200).json({ message: "Tutor availability and/or subjects updated" });
-                } else {
-                    response.status(500).json({ message: "Failed to update tutor availability or no changes detected" });
-                }
-            } else {
-                response.status(200).json({ message: "No changes detected in availability or subjects" });
-            }
+            // If availability already exists, update it
+            await db.collection("tutorAvailability").updateOne(
+                { tutorId: request.body.userId },
+                { $set: { availability: availabilityWithIds, selectedSubjects: selectedSubjects } }
+            );
+            return response.status(200).json({ message: "Availability updated." });
         } else {
-            let result = await db.collection("tutorAvailability").insertOne({
+            // If no availability exists, create a new entry
+            await db.collection("tutorAvailability").insertOne({
                 tutorId: request.body.userId,
                 availability: availabilityWithIds,
                 selectedSubjects: selectedSubjects,
             });
-
-            if (result.insertedId) {
-                response.status(201).json({ message: "Tutor availability created", availabilityId: result.insertedId });
-            } else {
-                response.status(500).json({ message: "Failed to create tutor availability" });
-            }
+            return response.status(201).json({ message: "Tutor availability created." });
         }
     } catch (error) {
-        if (error.code === 11000) {
-            response.status(400).json({ message: "Tutor availability already exists." });
-        } else {
-            console.error("Error:", error);
-            response.status(500).json({ message: "An error occurred." });
-        }
+        console.error("Error:", error);
+        response.status(500).json({ message: "An error occurred." });
     }
 });
+
+
+
+function splitIntoHourlySlots(startTime, endTime) {
+    const start = new Date(`1970-01-01T${startTime}:00`);
+    const end = new Date(`1970-01-01T${endTime}:00`);
+
+    const slots = [];
+
+    while (start < end) {
+        const next = new Date(start.getTime() + 60 * 60 * 1000); // Add 1 hour
+
+        slots.push({
+            start: start.toTimeString().substring(0, 5), // Format as HH:MM
+            end: next > end ? end.toTimeString().substring(0, 5) : next.toTimeString().substring(0, 5),
+        });
+
+        start.setTime(next.getTime()); // Move to the next hour
+    }
+
+    return slots;
+}
+
+
 
 
 // GET: Fetch tutor availability by tutor ID
 tutorAvailabilityRoutes.get("/availability/:userId", isTutor, async (request, response) => {
     let db = database.getDb();
-    tutorId = request.params.userId
-    let data = await db.collection("tutorAvailability").findOne({
-        tutorId
-    });
+    const tutorId = request.params.userId;
 
-    if (data) {
-        response.json(data);
-    } else {
-        response.status(404).json({ message: "Availability not found" });
+    try {
+        let data = await db.collection("tutorAvailability").findOne({
+            tutorId
+        });
+
+        if (data) {
+            // Return the hourly split availability
+            response.json(data);
+        } else {
+            response.status(404).json({ message: "Availability not found" });
+        }
+    } catch (error) {
+        console.error("Error fetching tutor availability:", error);
+        response.status(500).json({ message: "An error occurred." });
     }
 });
 
